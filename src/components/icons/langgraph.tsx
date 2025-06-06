@@ -1,14 +1,14 @@
-export function FullLogoSVG({
+export function LangGraphLogoSVG({
   className,
-  width = 935,
-  height = 427,
+  width,
+  height,
 }: {
   width?: number;
   height?: number;
   className?: string;
 }) {
   return (
-    <svg
+<svg
       width={width}
       height={height}
       viewBox="0 0 935 427"
