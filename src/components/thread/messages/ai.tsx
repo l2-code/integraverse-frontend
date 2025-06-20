@@ -136,7 +136,11 @@ export function AssistantMessage({
   const hasAnthropicToolCalls = !!anthropicStreamedToolCalls?.length;
   const isToolResult = message?.type === "tool";
 
-  if (isToolResult && hideToolCalls) {
+  // Check if there's an interrupt associated with this message
+  const hasInterrupt = threadInterrupt?.value && (isLastMessage || hasNoAIOrToolMessages);
+
+  // Hide tool results only if hideToolCalls is true AND there's no interrupt
+  if (isToolResult && hideToolCalls && !hasInterrupt) {
     return null;
   }
 
@@ -145,7 +149,8 @@ export function AssistantMessage({
       <div className="flex flex-col gap-2">
         {isToolResult ? (
           <>
-            <ToolResult message={message} />
+            {/* Always show ToolResult for interrupts, conditionally for others */}
+            {(!hideToolCalls || hasInterrupt) && <ToolResult message={message} />}
             <Interrupt
               interruptValue={threadInterrupt?.value}
               isLastMessage={isLastMessage}
