@@ -14,6 +14,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { UserNav } from "@/components/user-nav";
 
 function ThreadList({
   threads,
@@ -119,6 +120,7 @@ export default function ThreadHistory() {
           <h1 className="text-xl font-semibold tracking-tight">
             Thread History
           </h1>
+          <UserNav />
         </div>
         
         {threadsLoading ? (
@@ -141,6 +143,9 @@ export default function ThreadHistory() {
           >
             <SheetHeader>
               <SheetTitle>Thread History</SheetTitle>
+              <div className="mt-2">
+                <UserNav />
+              </div>
             </SheetHeader>
             <ThreadList
               threads={threads}

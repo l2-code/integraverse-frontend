@@ -46,6 +46,7 @@ import {
   ArtifactTitle,
   useArtifactContext,
 } from "./artifact";
+import { UserNav } from "../user-nav";
 
 function StickyToBottomContent(props: {
   content: ReactNode;
@@ -300,8 +301,9 @@ export function Thread() {
                   </Button>
                 )}
               </div>
-              <div className="absolute top-2 right-4 flex items-center">
+              <div className="absolute top-2 right-4 flex items-center gap-2">
                 <OpenGitHubRepo />
+                <UserNav />
               </div>
             </div>
           )}
@@ -358,6 +360,7 @@ export function Thread() {
                 >
                   <SquarePen className="size-5" />
                 </TooltipIconButton>
+                <UserNav />
               </div>
 
               <div className="from-background to-background/0 absolute inset-x-0 top-full h-5 bg-gradient-to-b" />
