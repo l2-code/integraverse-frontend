@@ -7,6 +7,11 @@ import { toast } from "sonner";
 import { useQueryState } from "nuqs";
 import { constructOpenInStudioURL } from "../utils";
 import { HumanInterrupt } from "@langchain/langgraph/prebuilt";
+import { sendBugReport, formatMessageHistory } from "@/lib/bug-report";
+import { useStreamContext } from "@/providers/Stream";
+import { Bug } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useState, useEffect } from "react";
 
 interface ThreadActionsViewProps {
   interrupt: HumanInterrupt;
@@ -61,6 +66,17 @@ export function ThreadActionsView({
   showState,
 }: ThreadActionsViewProps) {
   const [threadId] = useQueryState("threadId");
+  const thread = useStreamContext();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  // Get user email from Supabase auth
+  useEffect(() => {
+    const getUserEmail = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUserEmail(session?.user?.email || null);
+    };
+    getUserEmail();
+  }, []);
   const {
     acceptAllowed,
     hasEdited,
@@ -96,6 +112,44 @@ export function ThreadActionsView({
 
     const studioUrl = constructOpenInStudioURL(apiUrl, threadId ?? undefined);
     window.open(studioUrl, "_blank");
+  };
+
+  const handleReportBug = async () => {
+    if (!threadId) {
+      toast.error("Error", {
+        description: "No thread ID available to report.",
+        duration: 5000,
+        richColors: true,
+        closeButton: true,
+      });
+      return;
+    }
+
+    const messageHistory = formatMessageHistory(thread.messages);
+    const threadTitle = interrupt.action_request.action || "Unknown";
+    
+    const success = await sendBugReport({
+      threadId,
+      threadTitle,
+      messageHistory,
+      userEmail: userEmail || "Unknown User",
+    });
+
+    if (success) {
+      toast.success("Bug Report Sent", {
+        description: "Your bug report has been sent successfully.",
+        duration: 3000,
+        richColors: true,
+        closeButton: true,
+      });
+    } else {
+      toast.error("Failed to Send Report", {
+        description: "There was an error sending your bug report. Please try again.",
+        duration: 5000,
+        richColors: true,
+        closeButton: true,
+      });
+    }
   };
 
   const threadTitle = interrupt.action_request.action || "Unknown";
@@ -149,6 +203,15 @@ export function ThreadActionsView({
             Ignore
           </Button>
         )}
+        <Button
+          variant="outline"
+          className="border-red-500 bg-white font-normal text-red-600 hover:bg-red-50"
+          onClick={handleReportBug}
+          disabled={actionsDisabled}
+        >
+          <Bug className="mr-2 h-4 w-4" />
+          Report Bug
+        </Button>
       </div>
 
       {/* Actions */}

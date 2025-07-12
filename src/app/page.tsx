@@ -22,7 +22,7 @@ export default function DemoPage(): React.ReactNode {
           </StreamProvider>
         </ThreadProvider>
       </AuthGuard>
-      <DebugFooter />
+      {/* <DebugFooter /> */}
     </React.Suspense>
   );
 }

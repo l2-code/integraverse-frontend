@@ -47,6 +47,10 @@ import {
   useArtifactContext,
 } from "./artifact";
 import { UserNav } from "../user-nav";
+import InstructionsPanel from "@/components/instructions-panel";
+import { sendBugReport, formatMessageHistory } from "@/lib/bug-report";
+import { Bug } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 function StickyToBottomContent(props: {
   content: ReactNode;
@@ -117,12 +121,22 @@ export function Thread() {
   } = useFileUpload();
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   const stream = useStreamContext();
   const messages = stream.messages;
   const isLoading = stream.isLoading;
 
   const lastError = useRef<string | undefined>(undefined);
+
+  // Get user email from Supabase auth
+  useEffect(() => {
+    const getUserEmail = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUserEmail(session?.user?.email || null);
+    };
+    getUserEmail();
+  }, []);
 
   const setThreadId = (id: string | null) => {
     _setThreadId(id);
@@ -224,6 +238,44 @@ export function Thread() {
       checkpoint: parentCheckpoint,
       streamMode: ["values"],
     });
+  };
+
+  const handleReportBug = async () => {
+    if (!threadId) {
+      toast.error("Error", {
+        description: "No thread ID available to report.",
+        duration: 5000,
+        richColors: true,
+        closeButton: true,
+      });
+      return;
+    }
+
+    const messageHistory = formatMessageHistory(stream.messages);
+    const threadTitle = "Thread Conversation"; // Generic title since we don't have specific action
+    
+    const success = await sendBugReport({
+      threadId,
+      threadTitle,
+      messageHistory,
+      userEmail: userEmail || "Unknown User",
+    });
+
+    if (success) {
+      toast.success("Bug Report Sent", {
+        description: "Your bug report has been sent successfully.",
+        duration: 3000,
+        richColors: true,
+        closeButton: true,
+      });
+    } else {
+      toast.error("Failed to Send Report", {
+        description: "There was an error sending your bug report. Please try again.",
+        duration: 5000,
+        richColors: true,
+        closeButton: true,
+      });
+    }
   };
 
   const chatStarted = !!threadId || !!messages.length;
@@ -359,6 +411,15 @@ export function Thread() {
                   onClick={() => setThreadId(null)}
                 >
                   <SquarePen className="size-5" />
+                </TooltipIconButton>
+                <TooltipIconButton
+                  size="lg"
+                  className="p-4"
+                  tooltip="Report Bug"
+                  variant="ghost"
+                  onClick={handleReportBug}
+                >
+                  <Bug className="size-5 text-red-600" />
                 </TooltipIconButton>
                 <UserNav />
               </div>
@@ -517,6 +578,10 @@ export function Thread() {
             />
           </StickToBottom>
         </motion.div>
+        {/* Instructions Panel on the right */}
+        <div className="relative hidden lg:flex">
+          <InstructionsPanel />
+        </div>
         <div className="relative flex flex-col border-l">
           <div className="absolute inset-0 flex min-w-[30vw] flex-col">
             <div className="grid grid-cols-[1fr_auto] border-b p-4">
