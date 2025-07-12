@@ -26,7 +26,11 @@ const ThreadContext = createContext<ThreadContextType | undefined>(undefined);
 function getThreadSearchMetadata(
   assistantId: string,
 ): { graph_id: string } | { assistant_id: string } {
-  if (validate(assistantId)) {
+  // Since the threads are saved with graph_id: "agent", we should search by graph_id
+  // instead of assistant_id when the assistantId is "agent"
+  if (assistantId === "agent") {
+    return { graph_id: assistantId };
+  } else if (validate(assistantId)) {
     return { assistant_id: assistantId };
   } else {
     return { graph_id: assistantId };
@@ -34,24 +38,41 @@ function getThreadSearchMetadata(
 }
 
 export function ThreadProvider({ children }: { children: ReactNode }) {
+  // Get environment variables as fallbacks
+  const envApiUrl: string | undefined = process.env.NEXT_PUBLIC_API_URL;
+  const envAssistantId: string | undefined = process.env.NEXT_PUBLIC_ASSISTANT_ID;
+  
   const [apiUrl] = useQueryState("apiUrl");
   const [assistantId] = useQueryState("assistantId");
   const [threads, setThreads] = useState<Thread[]>([]);
   const [threadsLoading, setThreadsLoading] = useState(false);
 
+  // Use URL params with env var fallbacks, similar to StreamProvider
+  const finalApiUrl = apiUrl || envApiUrl;
+  const finalAssistantId = assistantId || envAssistantId;
+
   const getThreads = useCallback(async (): Promise<Thread[]> => {
-    if (!apiUrl || !assistantId) return [];
-    const client = createClient(apiUrl, getApiKey() ?? undefined);
+    if (!finalApiUrl || !finalAssistantId) {
+      return [];
+    }
+    
+    try {
+      const client = await createClient(finalApiUrl, getApiKey() ?? undefined);
+      const searchMetadata = getThreadSearchMetadata(finalAssistantId);
 
-    const threads = await client.threads.search({
-      metadata: {
-        ...getThreadSearchMetadata(assistantId),
-      },
-      limit: 100,
-    });
+      const threads = await client.threads.search({
+        metadata: {
+          ...searchMetadata,
+        },
+        limit: 100,
+      });
 
-    return threads;
-  }, [apiUrl, assistantId]);
+      return threads;
+    } catch (error) {
+      console.error("Error fetching threads:", error);
+      throw error;
+    }
+  }, [finalApiUrl, finalAssistantId]);
 
   const value = {
     getThreads,

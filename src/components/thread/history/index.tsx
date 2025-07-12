@@ -26,38 +26,45 @@ function ThreadList({
 
   return (
     <div className="flex h-full w-full flex-col items-start justify-start gap-2 overflow-y-scroll [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-transparent">
-      {threads.map((t) => {
-        let itemText = t.thread_id;
-        if (
-          typeof t.values === "object" &&
-          t.values &&
-          "messages" in t.values &&
-          Array.isArray(t.values.messages) &&
-          t.values.messages?.length > 0
-        ) {
-          const firstMessage = t.values.messages[0];
-          itemText = getContentString(firstMessage.content);
-        }
-        return (
-          <div
-            key={t.thread_id}
-            className="w-full px-1"
-          >
-            <Button
-              variant="ghost"
-              className="w-[280px] items-start justify-start text-left font-normal"
-              onClick={(e) => {
-                e.preventDefault();
-                onThreadClick?.(t.thread_id);
-                if (t.thread_id === threadId) return;
-                setThreadId(t.thread_id);
-              }}
+      {threads.length === 0 ? (
+        <div className="w-full px-4 py-8 text-center text-gray-500">
+          <p>No threads found</p>
+          <p className="text-sm mt-2">Start a conversation to see it here</p>
+        </div>
+      ) : (
+        threads.map((t) => {
+          let itemText = t.thread_id;
+          if (
+            typeof t.values === "object" &&
+            t.values &&
+            "messages" in t.values &&
+            Array.isArray(t.values.messages) &&
+            t.values.messages?.length > 0
+          ) {
+            const firstMessage = t.values.messages[0];
+            itemText = getContentString(firstMessage.content);
+          }
+          return (
+            <div
+              key={t.thread_id}
+              className="w-full px-1"
             >
-              <p className="truncate text-ellipsis">{itemText}</p>
-            </Button>
-          </div>
-        );
-      })}
+              <Button
+                variant="ghost"
+                className="w-[280px] items-start justify-start text-left font-normal"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onThreadClick?.(t.thread_id);
+                  if (t.thread_id === threadId) return;
+                  setThreadId(t.thread_id);
+                }}
+              >
+                <p className="truncate text-ellipsis">{itemText}</p>
+              </Button>
+            </div>
+          );
+        })
+      )}
     </div>
   );
 }
@@ -113,6 +120,7 @@ export default function ThreadHistory() {
             Thread History
           </h1>
         </div>
+        
         {threadsLoading ? (
           <ThreadHistoryLoading />
         ) : (

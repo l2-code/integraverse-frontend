@@ -24,6 +24,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { getApiKey } from "@/lib/api-key";
 import { useThreads } from "./Thread";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
 
 export type StateType = { messages: Message[]; ui?: UIMessage[] };
 
@@ -51,10 +52,14 @@ async function checkGraphStatus(
   apiKey: string | null,
 ): Promise<boolean> {
   try {
+    const { data: { session } } = await supabase.auth.getSession( );
+    const bearerToken = session?.access_token;
+    console.log("bearerToken", bearerToken);  
     const res = await fetch(`${apiUrl}/info`, {
       ...(apiKey && {
         headers: {
           "X-Api-Key": apiKey,
+          "Authorization": `Bearer ${bearerToken}`,
         },
       }),
     });
@@ -79,6 +84,24 @@ const StreamSession = ({
 }) => {
   const [threadId, setThreadId] = useQueryState("threadId");
   const { getThreads, setThreads } = useThreads();
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+
+  // Get the bearer token from Supabase
+  useEffect(() => {
+    const getToken = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setBearerToken(session?.access_token || null);
+    };
+    getToken();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setBearerToken(session?.access_token || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const streamValue = useTypedStream({
     apiUrl,
     apiKey: apiKey ?? undefined,
