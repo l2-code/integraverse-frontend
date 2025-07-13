@@ -401,15 +401,89 @@ export function Thread() {
 
       const data = await response.json();
       
-      // Copy the share URL to clipboard
-      await navigator.clipboard.writeText(data.shareUrl);
-      
-      toast.success("Thread Shared!", {
-        description: "Share link copied to clipboard",
-        duration: 5000,
-        richColors: true,
-        closeButton: true,
-      });
+      // Copy the share URL to clipboard with fallback
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(data.shareUrl);
+          toast.success("Thread Shared!", {
+            description: "Share link copied to clipboard",
+            duration: 5000,
+            richColors: true,
+            closeButton: true,
+          });
+        } else {
+          // Fallback: show the URL in a toast with copy button
+          toast.success("Thread Shared!", {
+            description: (
+              <div className="flex flex-col gap-2">
+                <p>Share link generated successfully!</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={data.shareUrl}
+                    readOnly
+                    className="flex-1 px-2 py-1 text-xs border rounded"
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.value = data.shareUrl;
+                      document.body.appendChild(input);
+                      input.select();
+                      document.execCommand('copy');
+                      document.body.removeChild(input);
+                      toast.success("Link copied!");
+                    }}
+                  >
+                    Copy
+                  </Button>
+                </div>
+              </div>
+            ),
+            duration: 10000,
+            richColors: true,
+            closeButton: true,
+          });
+        }
+      } catch (clipboardError) {
+        console.error('Clipboard error:', clipboardError);
+        // Fallback: show the URL in a toast
+        toast.success("Thread Shared!", {
+          description: (
+            <div className="flex flex-col gap-2">
+              <p>Share link generated successfully!</p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={data.shareUrl}
+                  readOnly
+                  className="flex-1 px-2 py-1 text-xs border rounded"
+                  onClick={(e) => (e.target as HTMLInputElement).select()}
+                />
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.value = data.shareUrl;
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(input);
+                    toast.success("Link copied!");
+                  }}
+                >
+                  Copy
+                </Button>
+              </div>
+            </div>
+          ),
+          duration: 10000,
+          richColors: true,
+          closeButton: true,
+        });
+      }
     } catch (error) {
       console.error('Share error:', error);
       toast.error("Failed to Share Thread", {
