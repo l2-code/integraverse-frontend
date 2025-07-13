@@ -49,7 +49,7 @@ import {
 import { UserNav } from "../user-nav";
 import InstructionsPanel from "@/components/instructions-panel";
 import { sendBugReport, formatMessageHistory } from "@/lib/bug-report";
-import { Bug } from "lucide-react";
+import { Bug, Share2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 function StickyToBottomContent(props: {
@@ -278,6 +278,149 @@ export function Thread() {
     }
   };
 
+  const testAuth = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const bearerToken = session?.access_token;
+
+      console.log('Test auth debug:', {
+        hasSession: !!session,
+        hasBearerToken: !!bearerToken,
+        tokenLength: bearerToken?.length || 0,
+        sessionUser: session?.user?.email
+      });
+
+      const response = await fetch('/api/test-auth', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${bearerToken}`,
+        },
+      });
+
+      const data = await response.json();
+      console.log('Test auth response:', data);
+
+      if (response.ok) {
+        toast.success("Auth test successful", {
+          description: `Logged in as ${data.user.email}`,
+          duration: 3000,
+          richColors: true,
+          closeButton: true,
+        });
+      } else {
+        toast.error("Auth test failed", {
+          description: data.message,
+          duration: 5000,
+          richColors: true,
+          closeButton: true,
+        });
+      }
+    } catch (error) {
+      console.error('Test auth error:', error);
+      toast.error("Auth test error", {
+        description: error instanceof Error ? error.message : "Unknown error",
+        duration: 5000,
+        richColors: true,
+        closeButton: true,
+      });
+    }
+  };
+
+  const handleShareThread = async () => {
+    if (!threadId) {
+      toast.error("Error", {
+        description: "No thread ID available to share.",
+        duration: 5000,
+        richColors: true,
+        closeButton: true,
+      });
+      return;
+    }
+
+    try {
+      // Get the current API URL and assistant ID from the URL params
+      const urlParams = new URLSearchParams(window.location.search);
+      const apiUrl = urlParams.get('apiUrl') || process.env.NEXT_PUBLIC_API_URL;
+      const assistantId = urlParams.get('assistantId') || process.env.NEXT_PUBLIC_ASSISTANT_ID;
+
+      if (!apiUrl || !assistantId) {
+        toast.error("Error", {
+          description: "Missing API configuration. Please check your settings.",
+          duration: 5000,
+          richColors: true,
+          closeButton: true,
+        });
+        return;
+      }
+
+      // Get the bearer token
+      const { data: { session } } = await supabase.auth.getSession();
+      const bearerToken = session?.access_token;
+
+      console.log('Share debug:', {
+        hasSession: !!session,
+        hasBearerToken: !!bearerToken,
+        tokenLength: bearerToken?.length || 0,
+        sessionUser: session?.user?.email
+      });
+
+      if (!bearerToken) {
+        toast.error("Error", {
+          description: "You must be logged in to share threads.",
+          duration: 5000,
+          richColors: true,
+          closeButton: true,
+        });
+        return;
+      }
+
+      console.log('Making request to /api/share with headers:', {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${bearerToken.substring(0, 20)}...`
+      });
+
+      const response = await fetch('/api/share', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${bearerToken}`,
+        },
+        body: JSON.stringify({
+          threadId,
+          apiUrl,
+          assistantId,
+        }),
+      });
+
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to share thread');
+      }
+
+      const data = await response.json();
+      
+      // Copy the share URL to clipboard
+      await navigator.clipboard.writeText(data.shareUrl);
+      
+      toast.success("Thread Shared!", {
+        description: "Share link copied to clipboard",
+        duration: 5000,
+        richColors: true,
+        closeButton: true,
+      });
+    } catch (error) {
+      console.error('Share error:', error);
+      toast.error("Failed to Share Thread", {
+        description: error instanceof Error ? error.message : "There was an error sharing your thread. Please try again.",
+        duration: 5000,
+        richColors: true,
+        closeButton: true,
+      });
+    }
+  };
+
   const chatStarted = !!threadId || !!messages.length;
   const hasNoAIOrToolMessages = !messages.find(
     (m) => m.type === "ai" || m.type === "tool",
@@ -411,6 +554,24 @@ export function Thread() {
                   onClick={() => setThreadId(null)}
                 >
                   <SquarePen className="size-5" />
+                </TooltipIconButton>
+                <TooltipIconButton
+                  size="lg"
+                  className="p-4"
+                  tooltip="Test Auth"
+                  variant="ghost"
+                  onClick={testAuth}
+                >
+                  <Bug className="size-5 text-green-600" />
+                </TooltipIconButton>
+                <TooltipIconButton
+                  size="lg"
+                  className="p-4"
+                  tooltip="Share Thread"
+                  variant="ghost"
+                  onClick={handleShareThread}
+                >
+                  <Share2 className="size-5 text-blue-600" />
                 </TooltipIconButton>
                 <TooltipIconButton
                   size="lg"

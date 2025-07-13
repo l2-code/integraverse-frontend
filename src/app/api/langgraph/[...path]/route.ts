@@ -74,7 +74,8 @@ async function handleRequest(
 
     // Construct the target URL
     const path = pathSegments.join('/');
-    const targetUrl = `http://localhost:2024/${path}`;
+    const langgraphUrl = process.env.LANGGRAPH_API_URL || 'http://localhost:2024';
+    const targetUrl = `${langgraphUrl}/${path}`;
 
     // Prepare headers
     const headers: Record<string, string> = {};
