@@ -116,8 +116,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Return the share URL
-    const shareUrl = `${request.nextUrl.origin}/shared/${shareId}`;
+    // Return the share URL using environment variable or fallback to request origin
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.nextUrl.origin;
+    const shareUrl = `${baseUrl}/shared/${shareId}`;
     
     return new NextResponse(
       JSON.stringify({ 
