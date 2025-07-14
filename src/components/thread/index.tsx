@@ -632,15 +632,6 @@ export function Thread() {
                 <TooltipIconButton
                   size="lg"
                   className="p-4"
-                  tooltip="Test Auth"
-                  variant="ghost"
-                  onClick={testAuth}
-                >
-                  <Bug className="size-5 text-green-600" />
-                </TooltipIconButton>
-                <TooltipIconButton
-                  size="lg"
-                  className="p-4"
                   tooltip="Share Thread"
                   variant="ghost"
                   onClick={handleShareThread}
