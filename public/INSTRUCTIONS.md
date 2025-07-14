@@ -1,12 +1,19 @@
-# Instruções do Integraverso
+# Integraverso v0.13
+
+### Melhorias
+
+- **Login**
+- **Histórico de conversas por usuário e persistentes**
+- **Compartilhamento de threads**
+- **Botão para bug report automático**
 
 ### Ferramentas Disponíveis
 
-Nesta versão, você pode utilizar as seguintes ferramentas:
-
 #### Convenia
 - **Listar dados de colaboradores**
-- **Dados de férias**: Verificar quem tem férias pendentes
+- **Dados de férias**: verificar quem tem férias pendentes
+- **Consultar reembolsos não aprovados ainda**
+- **Consultar reuniões 1on1**
 
 #### Clockify
 - **Listar projetos e tarefas**
